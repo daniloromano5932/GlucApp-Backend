@@ -7,19 +7,19 @@ var corsOptions = {
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
-//Show User AVG Measurements over a period of time works
+//Show User AVG Measurements over a period of time __works__
 router.get("/average_measurements", cors(corsOptions), async (req, res, next) => {
   try {
     const averageMinbloodPressure = await req.db.query
-    (`SELECT AVG(min_value) FROM blood_pressure WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
+      (`SELECT AVG(min_value) FROM blood_pressure WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     const averageMaxbloodPressure = await req.db.query
-    (`SELECT AVG(max_value) FROM blood_pressure WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`) 
+      (`SELECT AVG(max_value) FROM blood_pressure WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     const averageWeight = await req.db.query
-    (`SELECT AVG(value) FROM weight WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`) 
+      (`SELECT AVG(value) FROM weight WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     const averageGlycemia = await req.db.query
-    (`SELECT AVG(value) FROM glycemia WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`) 
+      (`SELECT AVG(value) FROM glycemia WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     const averageHeartRate = await req.db.query
-    (`SELECT AVG(value) FROM heart_rate WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`) 
+      (`SELECT AVG(value) FROM heart_rate WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     const average_measurements = {
       "averageMinBloodPressure": Math.round(averageMinbloodPressure.rows[0].avg),
       "averageMaxBloodPressure": Math.round(averageMaxbloodPressure.rows[0].avg),
@@ -33,14 +33,15 @@ router.get("/average_measurements", cors(corsOptions), async (req, res, next) =>
   }
 })
 
-//Show Detailed User Measurements over a period of time
+//Show Detailed User Measurements over a period of time __works__
 router.get("/unitary/:type", cors(corsOptions), async (req, res, next) => {
   try {
     const getMeasurements = await req.db.query
-    (`SELECT * FROM ${req.params.type} WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
+      (`SELECT * FROM ${req.params.type} WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
     res.send(getMeasurements.rows);
-  } catch (err) { 
-    console.log(err);  }
+  } catch (err) {
+    console.log(err);
+  }
 })
 
 //Insert User Measurements
@@ -52,7 +53,7 @@ router.post("/insert_measurements/:type", async (req, res) => {
     } else {
       const insertedUserBloodPressure = await req.db.query(`INSERT INTO ${req.params.type} (date, max_value, min_value, user_id) VALUES ('${req.body.date}', ${req.body.max_value}, ${req.body.min_value}, ${req.headers.user_id})`);
       res.send(insertedUserBloodPressure)
-    }  
+    }
   } catch (err) {
     console.log(err);
   }
@@ -63,14 +64,14 @@ router.put("/modify_measurements/:type", async (req, res) => {
   try {
     if (req.params.type !== 'blood_pressure') {
       const modifiedUserMeasurements = await req.db.query(
-      `UPDATE ${req.params.type}
+        `UPDATE ${req.params.type}
       SET date = '${req.body.date}',
           value = ${req.body.value}
       WHERE user_id = ${req.headers.user_id} AND id = ${req.body.id};`);
       res.send(modifiedUserMeasurements);
     } else {
       const modifiedUserBloodPressure = await req.db.query(
-      `
+        `
       UPDATE ${req.params.type}
       SET date = '${req.body.date}',
           max_value = ${req.body.max_value},
@@ -85,7 +86,7 @@ router.put("/modify_measurements/:type", async (req, res) => {
 })
 
 //Delete User Measurements
-router.delete("/delete_measurements/:type", async(req, res) => {
+router.delete("/delete_measurements/:type", async (req, res) => {
   try {
     const deletedMeasurement = await req.db.query(`DELETE FROM ${req.params.type} WHERE user_id = ${req.headers.user_id} AND id = ${req.body.id}`);
     res.send(deletedMeasurement)

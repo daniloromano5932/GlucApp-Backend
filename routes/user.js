@@ -24,7 +24,7 @@ router.post("/login", async (req, res) => {
 router.post("/signup", async (req, res) => {
   try {
     const signup = await req.db.query
-    (`INSERT INTO user_info (email, password)
+      (`INSERT INTO user_info (email, password)
     VALUES ('${req.body.email}', '${req.body.password}')`)
     res.send(signup.rows);
   } catch (err) {
@@ -32,22 +32,22 @@ router.post("/signup", async (req, res) => {
   }
 })
 
-//Show User Details with works
-router.get("/user_info", cors(corsOptions), async(req, res) => {
+//Show User Details with __works__
+router.get("/user_info", cors(corsOptions), async (req, res) => {
   try {
     const userInfo = await req.db.query
-    (`SELECT * FROM user_info WHERE user_id = ${req.headers.user_id}`)
+      (`SELECT * FROM user_info WHERE user_id = ${req.headers.user_id}`)
     res.send(userInfo.rows);
   } catch (err) {
     console.log(err)
   }
-} )
+})
 
 //Update User Info
 router.put("/update_user", async (req, res) => {
   try {
     const updateUserInfo = await req.db.query
-    (`UPDATE user_info 
+      (`UPDATE user_info 
     SET first_name ='${req.body.first_name}', 
     surname = '${req.body.surname}', 
     date_of_birth = '${req.body.date_of_birth}',
@@ -61,7 +61,7 @@ router.put("/update_user", async (req, res) => {
 })
 
 //Delete User Account
-router.delete("/delete_account", async(req, res) => {
+router.delete("/delete_account", async (req, res) => {
   try {
     const deletedAccount = await req.db.query(`DELETE FROM user_info WHERE user_id = ${req.headers.user_id}`);
     res.send(deletedAccount)
