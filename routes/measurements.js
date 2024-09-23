@@ -33,12 +33,101 @@ router.get("/average_measurements", cors(corsOptions), async (req, res, next) =>
   }
 })
 
-//Show Detailed User Measurements over a period of time __works__
+//Show Detailed User Measurements over last year
 router.get("/unitary/:type", cors(corsOptions), async (req, res, next) => {
   try {
-    const getMeasurements = await req.db.query
-      (`SELECT * FROM ${req.params.type} WHERE user_id = '${req.headers.user_id}' AND date BETWEEN CURRENT_DATE - INTERVAL '${req.query.time_period} days' AND CURRENT_DATE`)
-    res.send(getMeasurements.rows);
+    if (req.query.time_period === 'YEAR') {
+      if (req.params.type !== 'blood_pressure') {
+        const getYearlyMeasurements = await req.db.query
+          (`SELECT
+          DATE_TRUNC('month', date) AS month,
+          AVG(value) AS avg_metric
+          FROM ${req.params.type}
+          WHERE user_id = ${req.headers.user_id} AND
+          EXTRACT(YEAR FROM date) = 2024
+          GROUP BY
+          DATE_TRUNC('month', date)
+          ORDER BY
+          month;`)
+        res.send(getYearlyMeasurements.rows);
+      } else {
+        const getYearlyBPMeasurements = await req.db.query
+          (`SELECT
+        DATE_TRUNC('month', date) AS month,
+        AVG(max_value) AS avg_max_metric,
+		    AVG(min_value) AS avg_min_metric
+        FROM blood_pressure
+        WHERE user_id = ${req.headers.user_id} AND
+        EXTRACT(YEAR FROM date) = 2024
+        GROUP BY
+        DATE_TRUNC('month', date)
+        ORDER BY
+        month;`)
+        res.send(getYearlyBPMeasurements.rows);
+      }
+    } else if (req.query.time_period === 'MONTH') {
+      if (req.params.type !== 'blood_pressure') {
+        const getMonthlyMeasurements = await req.db.query
+          (`SELECT 
+      DATE(date) AS day_of_month,
+      AVG(value) AS avg_metric
+      FROM ${req.params.type}
+      WHERE user_id = ${req.headers.user_id}
+      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+      AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      GROUP BY DATE(date)
+      ORDER BY DATE(date);`)
+        res.send(getMonthlyMeasurements.rows)
+      } else {
+        const getMonthlyBPMeasurements = await req.db.query
+          (`SELECT 
+      DATE(date) AS day_of_month,
+      AVG(max_value) AS avg_max_metric,
+		  AVG(min_value) AS avg_min_metric
+      FROM blood_pressure
+      WHERE user_id = ${req.headers.user_id}
+      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+      AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+      GROUP BY DATE(date)
+      ORDER BY DATE(date);`)
+        res.send(getMonthlyBPMeasurements.rows)
+      }
+    } else if (req.query.time_period === 'WEEK') {
+      if (req.params.type !== 'blood_pressure') {
+        const getWeeklyMeasurements = await req.db.query
+          (`SELECT 
+      date::date AS day_of_week,
+      AVG(value) AS avg_metric
+      FROM ${req.params.type}
+      WHERE
+      user_id = ${req.headers.user_id}
+      AND date >= (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 1)
+      AND date < (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 8)
+      GROUP BY day_of_week
+      ORDER BY day_of_week;`
+          )
+        res.send(getWeeklyMeasurements.rows)
+      } else {
+        const getWeeklyBPMeasurements = await req.db.query(
+          `SELECT 
+      date::date AS day_of_week,
+       AVG(max_value) AS avg_max_metric,
+		  AVG(min_value) AS avg_min_metric
+      FROM blood_pressure
+      WHERE
+      user_id = ${req.headers.user_id}
+      AND date >= (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 1)
+      AND date < (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 8)
+      GROUP BY day_of_week
+      ORDER BY day_of_week;`
+        )
+        res.send(getWeeklyBPMeasurements.rows)
+
+      }
+    }
+    else {
+      res.send([])
+    }
   } catch (err) {
     console.log(err);
   }
