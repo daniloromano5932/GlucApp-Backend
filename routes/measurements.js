@@ -104,14 +104,13 @@ router.get("/unitary/:type", cors(corsOptions), async (req, res, next) => {
       AND date >= (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 1)
       AND date < (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 8)
       GROUP BY day_of_week
-      ORDER BY day_of_week;`
-          )
+      ORDER BY day_of_week;`)
         res.send(getWeeklyMeasurements.rows)
       } else {
-        const getWeeklyBPMeasurements = await req.db.query(
-          `SELECT 
+        const getWeeklyBPMeasurements = await req.db.query
+          (`SELECT 
       date::date AS day_of_week,
-       AVG(max_value) AS avg_max_metric,
+      AVG(max_value) AS avg_max_metric,
 		  AVG(min_value) AS avg_min_metric
       FROM blood_pressure
       WHERE
@@ -119,14 +118,37 @@ router.get("/unitary/:type", cors(corsOptions), async (req, res, next) => {
       AND date >= (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 1)
       AND date < (CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::int + 8)
       GROUP BY day_of_week
-      ORDER BY day_of_week;`
-        )
+      ORDER BY day_of_week;`)
         res.send(getWeeklyBPMeasurements.rows)
-
       }
     }
-    else {
-      res.send([])
+    else if (req.query.time_period === 'QUARTER') {
+      if (req.params.type !== 'blood_pressure') {
+        const getQuarterlyMeasurements = await req.db.query
+          (`SELECT 
+      date_trunc('month', date) AS quarterly_month,
+      AVG(value) AS avg_metric
+      FROM ${req.params.type}
+      WHERE user_id = ${req.headers.user_id}
+      AND date >= date_trunc('quarter', CURRENT_DATE)
+      AND date < date_trunc('quarter', CURRENT_DATE) + interval '3 months' 
+      GROUP BY quarterly_month
+      ORDER BY quarterly_month;`)
+        res.send(getQuarterlyMeasurements.rows)
+      } else {
+        const getQuarterlyBPMeasurements = await req.db.query
+          (`SELECT 
+      date_trunc('month', date) AS quarterly_month,
+      AVG(max_value) AS avg_max_metric,
+      AVG(min_value) AS avg_min_metric
+      FROM blood_pressure
+      WHERE user_id = ${req.headers.user_id}
+      AND date >= date_trunc('quarter', CURRENT_DATE)
+      AND date < date_trunc('quarter', CURRENT_DATE) + interval '3 months' 
+      GROUP BY quarterly_month
+      ORDER BY quarterly_month;`)
+        res.send(getQuarterlyBPMeasurements.rows)
+      }
     }
   } catch (err) {
     console.log(err);
